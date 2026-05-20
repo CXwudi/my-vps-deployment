@@ -1,0 +1,61 @@
+# Host-level orchestration for the lightweight VPS deployment.
+# Recipes are intentionally wrappers; do not run boot/down recipes unless you
+# intend to alter live Docker services on the VPS.
+
+set dotenv-load := false
+
+host_root := justfile_directory()
+global_network := "http-global-network"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Create the shared reverse-proxy bridge network used by production services.
+create-net:
+  docker network create --driver bridge {{global_network}}
+
+# Remove the shared reverse-proxy bridge network.
+remove-net:
+  docker network rm {{global_network}}
+
+# Backward-compatible alias for production-power-server naming.
+shutdown-net: remove-net
+
+# Render the list of host-level recipes without changing services.
+list:
+  @just --justfile {{justfile()}} --list
+
+# Boot infrastructure services that are intentionally host-scoped.
+boot-infra:
+  just --justfile {{host_root}}/infra/watchtower/justfile boot
+  just --justfile {{host_root}}/infra/docker-volume-backup/justfile boot
+
+# Stop infrastructure services that are intentionally host-scoped.
+down-infra:
+  just --justfile {{host_root}}/infra/docker-volume-backup/justfile down
+  just --justfile {{host_root}}/infra/watchtower/justfile down
+
+# Boot known long-running VPS service groups. Does not include one-shot jobs.
+boot-all: create-net
+  just --justfile {{host_root}}/infra/watchtower/justfile boot
+  just --justfile {{host_root}}/infra/docker-volume-backup/justfile boot
+  just --justfile {{host_root}}/LLMs/lobe-chat/justfile boot env=prod
+  just --justfile {{host_root}}/rss/justfile boot-all env=prod
+  just --justfile {{host_root}}/nginx/justfile boot
+  just --justfile {{host_root}}/fake-site-entry/justfile boot
+  just --justfile {{host_root}}/sing-box/justfile boot
+  just --justfile {{host_root}}/warp/justfile boot
+
+# Stop known long-running VPS service groups. Does not delete persisted volumes.
+down-all:
+  just --justfile {{host_root}}/warp/justfile down
+  just --justfile {{host_root}}/sing-box/justfile down
+  just --justfile {{host_root}}/fake-site-entry/justfile down
+  just --justfile {{host_root}}/nginx/justfile down
+  just --justfile {{host_root}}/rss/justfile down-all env=prod
+  just --justfile {{host_root}}/LLMs/lobe-chat/justfile down env=prod
+  just --justfile {{host_root}}/infra/docker-volume-backup/justfile down
+  just --justfile {{host_root}}/infra/watchtower/justfile down
+
+# Restart known long-running service groups.
+reboot-all: down-all boot-all

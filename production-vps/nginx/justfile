@@ -1,0 +1,28 @@
+# Operations for the VPS nginx reverse proxy.
+
+compose_file := "compose.yml"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Render the Compose config without starting containers.
+config:
+  docker compose -f {{compose_file}} config
+
+# Validate nginx configuration in a transient container.
+validate:
+  docker compose -f {{compose_file}} run --rm nginx nginx -t
+
+# Start nginx.
+boot:
+  docker compose -f {{compose_file}} up -d
+
+# Stop nginx.
+down:
+  docker compose -f {{compose_file}} down
+
+# Reload nginx inside the running container after config/cert changes.
+reload:
+  docker compose -f {{compose_file}} exec nginx nginx -s reload
+
+reboot: down boot

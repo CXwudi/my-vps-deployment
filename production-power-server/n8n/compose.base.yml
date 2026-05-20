@@ -1,0 +1,222 @@
+# n8n Queue Mode Deployment
+# Base configuration for n8n with separate main instance and worker
+# Modified from n8n official docker-compose examples
+# Changes:
+# 1. Explicit naming for containers, networks, volumes
+# 2. Queue mode with Redis broker and dedicated worker
+# 3. Postgres 18 for database backend
+# 4. Dedicated workflow Postgres/Redis for workflow-owned data
+# 5. Environment configuration in single .env file
+# 6. Restart policy: unless-stopped
+
+# Shared environment variables for n8n instances
+x-n8n-env: &n8n-env
+  # Database configuration
+  DB_TYPE: ${DB_TYPE}
+  DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST}
+  DB_POSTGRESDB_PORT: ${DB_POSTGRESDB_PORT}
+  DB_POSTGRESDB_DATABASE: ${DB_POSTGRESDB_DATABASE}
+  DB_POSTGRESDB_USER: ${DB_POSTGRESDB_USER}
+  DB_POSTGRESDB_PASSWORD: ${DB_POSTGRESDB_PASSWORD}
+  # Queue/Redis configuration
+  EXECUTIONS_MODE: ${EXECUTIONS_MODE}
+  QUEUE_BULL_REDIS_HOST: ${QUEUE_BULL_REDIS_HOST}
+  QUEUE_BULL_REDIS_PORT: ${QUEUE_BULL_REDIS_PORT}
+  QUEUE_BULL_REDIS_PASSWORD: ${QUEUE_BULL_REDIS_PASSWORD}
+  QUEUE_BULL_REDIS_DB: ${QUEUE_BULL_REDIS_DB}
+  QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE}
+  OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: ${OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS}
+  # Task runners configuration
+  N8N_RUNNERS_ENABLED: ${N8N_RUNNERS_ENABLED}
+  N8N_RUNNERS_MODE: ${N8N_RUNNERS_MODE}
+  N8N_RUNNERS_BROKER_LISTEN_ADDRESS: ${N8N_RUNNERS_BROKER_LISTEN_ADDRESS}
+  N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+  N8N_NATIVE_PYTHON_RUNNER: ${N8N_NATIVE_PYTHON_RUNNER}
+  # Timezone
+  GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+  TZ: ${TZ}
+  # Telemetry
+  N8N_DIAGNOSTICS_ENABLED: ${N8N_DIAGNOSTICS_ENABLED}
+  N8N_PERSONALIZATION_ENABLED: ${N8N_PERSONALIZATION_ENABLED}
+  # Execution settings
+  EXECUTIONS_DATA_PRUNE: ${EXECUTIONS_DATA_PRUNE}
+  EXECUTIONS_DATA_MAX_AGE: ${EXECUTIONS_DATA_MAX_AGE}
+  # Security keys
+  N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+  N8N_USER_MANAGEMENT_JWT_SECRET: ${N8N_USER_MANAGEMENT_JWT_SECRET}
+
+services:
+  # Main n8n instance - handles UI and API
+  n8n-main:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION}
+    container_name: n8n-main
+    restart: unless-stopped
+    environment:
+      <<: *n8n-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - default
+    labels: # it's still needed
+      - "com.centurylinklabs.watchtower.enable=false"
+
+  # Dedicated worker for executing workflows
+  n8n-worker:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION}
+    container_name: n8n-worker
+    restart: unless-stopped
+    command: worker --concurrency=5
+    environment:
+      <<: *n8n-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - default
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+
+  # Task runner for executing Code nodes (paired with worker)
+  n8n-runner-worker:
+    # for some reason n8n runners image is not in docker.n8n.io registry
+    image: n8nio/runners:${N8N_VERSION}
+    container_name: n8n-runner-worker
+    restart: unless-stopped
+    environment:
+      # Connect to worker's Task Broker since executions run on worker in queue mode
+      N8N_RUNNERS_TASK_BROKER_URI: ${N8N_RUNNERS_TASK_BROKER_URI_WORKER}
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: ${N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT}
+      # these two allow built-in modules env vars are not working, workaround via bind-mount
+      NODE_FUNCTION_ALLOW_BUILTIN: ${NODE_FUNCTION_ALLOW_BUILTIN}
+      N8N_RUNNERS_STDLIB_ALLOW: ${N8N_RUNNERS_STDLIB_ALLOW}
+    volumes:
+      - ./custom-n8n-task-runners.json:/etc/n8n-task-runners.json:ro
+    depends_on:
+      - n8n-worker
+    networks:
+      - default
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+
+  # Task runner for executing Code nodes (paired with main)
+  n8n-runner-main:
+    # for some reason n8n runners image is not in docker.n8n.io registry
+    image: n8nio/runners:${N8N_VERSION}
+    container_name: n8n-runner-main
+    restart: unless-stopped
+    environment:
+      # Connect to main's Task Broker for main instance executions
+      N8N_RUNNERS_TASK_BROKER_URI: ${N8N_RUNNERS_TASK_BROKER_URI_MAIN}
+      N8N_RUNNERS_AUTH_TOKEN: ${N8N_RUNNERS_AUTH_TOKEN}
+      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: ${N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT}
+      # these two allow built-in modules env vars are not working, workaround via bind-mount
+      NODE_FUNCTION_ALLOW_BUILTIN: ${NODE_FUNCTION_ALLOW_BUILTIN}
+      N8N_RUNNERS_STDLIB_ALLOW: ${N8N_RUNNERS_STDLIB_ALLOW}
+    volumes:
+      - ./custom-n8n-task-runners.json:/etc/n8n-task-runners.json:ro
+    depends_on:
+      - n8n-main
+    networks:
+      - default
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+
+  # PostgreSQL database for n8n
+  postgres:
+    image: postgres:18-alpine
+    container_name: n8n-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - default
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  # Redis for queue management
+  redis:
+    image: redis:8-alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    environment:
+      QUEUE_BULL_REDIS_PASSWORD: ${QUEUE_BULL_REDIS_PASSWORD}
+    command: sh -c 'redis-server $${QUEUE_BULL_REDIS_PASSWORD:+--requirepass $$QUEUE_BULL_REDIS_PASSWORD}'
+    volumes:
+      - redis-data:/data
+    networks:
+      - default
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$${QUEUE_BULL_REDIS_PASSWORD}" redis-cli ping | grep PONG']
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+  # PostgreSQL database for workflow-owned data
+  workflow-postgres:
+    image: postgres:18-alpine
+    container_name: n8n-workflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${WORKFLOW_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${WORKFLOW_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${WORKFLOW_POSTGRES_DB}
+    volumes:
+      - workflow-postgres-data:/var/lib/postgresql
+    networks:
+      - default
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${WORKFLOW_POSTGRES_USER} -d ${WORKFLOW_POSTGRES_DB}']
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  # Redis instance for workflow-owned data/cache
+  workflow-redis:
+    image: redis:8-alpine
+    container_name: n8n-workflow-redis
+    restart: unless-stopped
+    environment:
+      WORKFLOW_REDIS_PASSWORD: ${WORKFLOW_REDIS_PASSWORD}
+    command: sh -c 'redis-server $${WORKFLOW_REDIS_PASSWORD:+--requirepass $$WORKFLOW_REDIS_PASSWORD}'
+    volumes:
+      - workflow-redis-data:/data
+    networks:
+      - default
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$${WORKFLOW_REDIS_PASSWORD}" redis-cli ping | grep PONG']
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+networks:
+  default:
+    name: n8n-defnet
+
+volumes:
+  n8n-data:
+    name: n8n-data
+  postgres-data:
+    name: n8n-postgres-data
+  redis-data:
+    name: n8n-redis-data
+  workflow-postgres-data:
+    name: n8n-workflow-postgres-data
+  workflow-redis-data:
+    name: n8n-workflow-redis-data

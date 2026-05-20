@@ -1,0 +1,48 @@
+# Host-level recipes for local Debian server operations
+
+# --- Global Network ---
+
+create-net:
+  docker network create --driver bridge global-net
+
+shutdown-net:
+  docker network rm global-net
+
+# --- Service Groups ---
+
+boot-all: create-net
+  just --justfile infra/watchtower/justfile boot
+  just --justfile nginx/justfile boot
+  just --justfile adguardhome/justfile boot
+  just --justfile cloudflare-tunnel/justfile boot env=prod
+  just --justfile openlist/justfile boot env=prod
+  just --justfile qbittorrent/justfile boot env=prod
+
+down-all:
+  just --justfile infra/watchtower/justfile down
+  just --justfile nginx/justfile down
+  just --justfile adguardhome/justfile down
+  just --justfile cloudflare-tunnel/justfile down env=prod
+  just --justfile openlist/justfile down env=prod
+  just --justfile qbittorrent/justfile down env=prod
+  just shutdown-net
+
+# --- Individual Service Shortcuts ---
+
+boot-openlist env="prod":
+  just --justfile openlist/justfile boot {{env}}
+
+boot-qbittorrent env="prod":
+  just --justfile qbittorrent/justfile boot {{env}}
+
+boot-adguardhome:
+  just --justfile adguardhome/justfile boot
+
+boot-cloudflare-tunnel env="prod":
+  just --justfile cloudflare-tunnel/justfile boot {{env}}
+
+boot-nginx:
+  just --justfile nginx/justfile boot
+
+boot-watchtower:
+  just --justfile infra/watchtower/justfile boot

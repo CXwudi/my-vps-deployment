@@ -1,0 +1,8 @@
+boot:
+  docker compose up -d
+
+down:
+  docker compose down
+
+# Restart nginx service (shutdown then boot)
+reboot: down boot

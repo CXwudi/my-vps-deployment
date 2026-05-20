@@ -1,0 +1,39 @@
+services:
+  n8n-main:
+    environment:
+      # Production URLs and protocol
+      N8N_HOST: n8n.mikufancx.cyou
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://n8n.mikufancx.cyou
+    networks:
+      - default
+      - global-net
+    # disable resource limits for now, let's check actual usage first
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 2.0g
+
+  n8n-worker:
+    environment:
+      # Production URLs and protocol
+      N8N_HOST: n8n.mikufancx.cyou
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://n8n.mikufancx.cyou
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 2.0g
+
+  # n8n-runner-worker:
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 1.0g
+
+networks:
+  global-net:
+    name: global-net
+    external: true

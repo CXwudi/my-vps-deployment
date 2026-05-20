@@ -1,0 +1,7 @@
+{
+  "log": {
+    "output": "./logs/sing-box.log",
+    "level": "info",
+    "timestamp": true
+  }
+}

@@ -1,0 +1,19 @@
+x-shared-env: &shared-env-prod
+  SERVER_ORIGIN_URL: ${WEWE_RSS_SERVER_ORIGIN_URL_PROD:?WEWE_RSS_SERVER_ORIGIN_URL_PROD must be set in .env}
+
+services:
+  wewe-rss:
+    environment:
+      <<: *shared-env-prod
+    networks:
+      - default
+      - rss-network
+      - http-global-network
+
+networks:
+  rss-network:
+    name: ${RSS_GLOBAL_NETWORK:-rss-global-network}
+    external: true
+  http-global-network:
+    name: ${HTTP_GLOBAL_NETWORK:-http-global-network}
+    external: true

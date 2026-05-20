@@ -1,0 +1,18 @@
+create-net:
+  docker network create --driver bridge global-net
+
+shutdown-net:
+  docker network rm global-net
+
+boot-all: create-net
+  just --justfile infra/watchtower/justfile boot
+  just --justfile dify/justfile boot env=prod
+  just --justfile n8n/justfile boot env=prod
+  just --justfile nginx/justfile boot
+
+down-all:
+  just --justfile infra/watchtower/justfile down
+  just --justfile dify/justfile down env=prod
+  just --justfile n8n/justfile down env=prod
+  just --justfile nginx/justfile down
+  just shutdown-net

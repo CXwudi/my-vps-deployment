@@ -1,0 +1,20 @@
+compose_file := "compose.yml"
+
+boot:
+  docker compose -f {{compose_file}} up -d
+
+down:
+  docker compose -f {{compose_file}} down
+
+reboot: down boot
+
+config:
+  docker compose -f {{compose_file}} config
+
+# Test nginx configuration syntax (requires running container)
+test-config:
+  docker compose -f {{compose_file}} exec nginx nginx -t
+
+# Reload nginx without downtime
+reload:
+  docker compose -f {{compose_file}} exec nginx nginx -s reload

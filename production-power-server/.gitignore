@@ -1,0 +1,116 @@
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.*.example
+!.env.*.template
+
+# SSL/TLS Certificates and keys
+nginx/certificate/
+nginx/ssl/
+dify/nginx/ssl/
+
+# Nginx generated config files (keep templates)
+dify/nginx/conf.d/*.conf
+!dify/nginx/conf.d/*.conf.template
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+
+# Log files
+*.log
+*.log.*
+logs/
+nginx/logs/
+dify/logs/
+/var/log/
+
+# Backup files
+*.backup
+*.bak
+*.dump
+*.sql
+backup/
+backups/
+*-backup/
+*-backups/
+
+# Docker volumes and data
+docker-volumes/
+data/
+volumes/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+.nfs*
+
+# IDE/Editor files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Process and runtime files
+*.pid
+*.sock
+*.lock
+
+# Compression files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Cache directories
+.cache/
+cache/
+node_modules/.cache/
+
+# Configuration overrides (keep templates)
+*local.json
+*.local.conf
+!*.local.example.*
+!*.local.template.*
+
+# Secrets and credentials
+secrets/
+credentials/
+auth/
+.secrets
+.credentials
+
+# Application specific
+# Add any application-specific patterns here
+
+# Ignore ask_human files
+ask_human*.md
+agent-rsp/
+agent-plan/

@@ -1,0 +1,12 @@
+# services:
+  # qbittorrent-app:
+  #   environment:
+  #     - WEBUI_PORT=8080
+  #   ports:
+  #     - "8080:8080"
+
+  # qbittorrent-add-trackers:
+  #   environment:
+  #     - APP__QBITTORRENT__URL=http://qbittorrent-app:8080
+
+# 323341e5-056f-4025-bfcf-21bcdff228d1

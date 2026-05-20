@@ -1,0 +1,13 @@
+services:
+  lego:
+    image: goacme/lego:latest
+    container_name: lego
+    env_file:
+      - ${LEGO_ENV_FILE:-.env.example}
+    environment:
+      CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN:?CLOUDFLARE_DNS_API_TOKEN must be set in .env}
+    volumes:
+      - ./lego-data:/.lego
+      - ../certification/letsencrypt-cert:/.lego/certificates
+    dns:
+      - ${LEGO_DNS_RESOLVER_IP:-1.1.1.1}

@@ -1,0 +1,133 @@
+supported_envs := "local prod"
+compose_base := "compose.base.yml"
+compose_local := "compose.local.yml"
+compose_prod := "compose.prod.yml"
+
+boot env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} up -d
+
+down env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} down
+
+backup backup_dir="../n8n-backups":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  # Accept both `just backup path` and mistaken `just backup backup_dir=path`.
+  raw_backup_dir="{{backup_dir}}"
+  if [[ "${raw_backup_dir}" == backup_dir=* ]]; then
+    backup_dir="${raw_backup_dir#backup_dir=}"
+  else
+    backup_dir="${raw_backup_dir}"
+  fi
+  backup_dir="${backup_dir%/}"
+
+  declare -A volume_dirs=(
+    [n8n-main]="/home/node/.n8n"
+    [n8n-postgres]="/var/lib/postgresql"
+    [n8n-redis]="/data"
+    [n8n-workflow-postgres]="/var/lib/postgresql"
+    [n8n-workflow-redis]="/data"
+  )
+  declare -A backup_files=(
+    [n8n-main]="n8n-data.tar"
+    [n8n-postgres]="n8n-postgres.tar"
+    [n8n-redis]="n8n-redis.tar"
+    [n8n-workflow-postgres]="n8n-workflow-postgres.tar"
+    [n8n-workflow-redis]="n8n-workflow-redis.tar"
+  )
+  containers=(n8n-main n8n-postgres n8n-redis n8n-workflow-postgres n8n-workflow-redis)
+
+  mkdir -p "${backup_dir}"
+  docker compose -f {{compose_base}} create
+
+  for container in "${containers[@]}"; do
+    mount_dir="${volume_dirs[$container]}"
+    tar_file="${backup_files[$container]}"
+    docker run --rm --volumes-from "${container}" -v "$(pwd)/${backup_dir}:/backup" debian \
+      tar cvf "/backup/${tar_file}" "${mount_dir}"
+  done
+
+  docker compose -f {{compose_base}} down
+  sudo chown -R "$USER:$USER" "${backup_dir}"
+  echo "Backup created successfully in the ${backup_dir} directory."
+
+restore backup_dir="../n8n-backups":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  # Accept both `just restore path` and mistaken `just restore backup_dir=path`.
+  raw_backup_dir="{{backup_dir}}"
+  if [[ "${raw_backup_dir}" == backup_dir=* ]]; then
+    backup_dir="${raw_backup_dir#backup_dir=}"
+  else
+    backup_dir="${raw_backup_dir}"
+  fi
+  backup_dir="${backup_dir%/}"
+
+  declare -A volume_dirs=(
+    [n8n-main]="/home/node/.n8n"
+    [n8n-postgres]="/var/lib/postgresql"
+    [n8n-redis]="/data"
+    [n8n-workflow-postgres]="/var/lib/postgresql"
+    [n8n-workflow-redis]="/data"
+  )
+  declare -A backup_files=(
+    [n8n-main]="n8n-data.tar"
+    [n8n-postgres]="n8n-postgres.tar"
+    [n8n-redis]="n8n-redis.tar"
+    [n8n-workflow-postgres]="n8n-workflow-postgres.tar"
+    [n8n-workflow-redis]="n8n-workflow-redis.tar"
+  )
+  containers=(n8n-main n8n-postgres n8n-redis n8n-workflow-postgres n8n-workflow-redis)
+
+  if [[ ! -d "${backup_dir}" ]]; then
+    echo "Error: ${backup_dir} directory not found"
+    exit 1
+  fi
+
+  for container in "${containers[@]}"; do
+    tar_file="${backup_files[$container]}"
+    if [[ ! -f "${backup_dir}/${tar_file}" ]]; then
+      echo "Error: ${backup_dir}/${tar_file} not found"
+      exit 1
+    fi
+  done
+
+  docker compose -f {{compose_base}} create
+
+  for container in "${containers[@]}"; do
+    mount_dir="${volume_dirs[$container]}"
+    tar_file="${backup_files[$container]}"
+    docker run --rm --volumes-from "${container}" -v "$(pwd)/${backup_dir}:/backup" debian bash -c \
+      "rm -rf ${mount_dir}/* && tar xvf /backup/${tar_file} -C /"
+  done
+
+  docker compose -f {{compose_base}} down
+  echo "Backup restoration completed successfully."
+
+reboot env="prod": (down env) (boot env)

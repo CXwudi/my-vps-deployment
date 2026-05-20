@@ -1,0 +1,159 @@
+# =============================================================================
+# Root .gitignore for my-vps-deployment
+# Seeded from production-power-server/.gitignore and expanded for all host folders
+# =============================================================================
+
+# === Environment files ===
+# Ignore all .env files except example/template files
+.env
+.env.*
+*.env
+!.env.example
+!.env.template
+!.env.*.example
+!.env.*.template
+!*.env.example
+!*.env.template
+
+# === SSL/TLS Certificates and keys ===
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+certificate/
+certification/
+
+# Nginx htpasswd files (contain auth material)
+*.htpasswd
+
+# Lego ACME account data (required for renewal but secret-like)
+lego-data/
+
+# === Log files ===
+*.log
+*.log.*
+logs/
+
+# === Backup files ===
+*.backup
+*.bak
+*.dump
+*.sql
+backup/
+backups/
+backup-files/
+*-backup/
+*-backups/
+dify-backups/
+
+# === Docker volumes and data ===
+docker-volumes/
+data/
+volumes/
+
+# === Temporary files ===
+*.tmp
+*.temp
+temp/
+tmp/
+
+# === OS generated files ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+.nfs*
+
+# === IDE/Editor files ===
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# === Process and runtime files ===
+*.pid
+*.sock
+*.lock
+
+# === Compression/archive files ===
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# === Database files ===
+*.sqlite
+*.sqlite3
+*.db
+
+# === Cache directories ===
+.cache/
+cache/
+.uv-cache/
+
+# === Configuration overrides (keep templates) ===
+*local.json
+*.local.conf
+!*.local.example.*
+!*.local.template.*
+
+# === Secrets and credentials ===
+secrets/
+credentials/
+auth/
+.secrets
+.credentials
+
+# === Temporary AI planning artifacts (spec/ and plan/) ===
+/spec/
+/plan/
+/plans/
+
+# === Host-specific ignored paths ===
+
+# Retired or stale deployments
+production-local-debian/dify-exported/
+
+# Host-local runtime / download data
+production-local-debian/torrent-download/
+production-local-debian/adguardhome/adguard/
+
+# === Host-specific sensitive config (contains secrets) ===
+production-vps/certification/letsencrypt-cert/
+!production-vps/infra/docker-volume-backup/
+production-vps/infra/docker-volume-backup/config/
+production-vps/infra/docker-volume-backup/disabled/
+production-vps/infra/docker-volume-backup/*.env
+!production-vps/infra/docker-volume-backup/.env.example
+!production-vps/infra/docker-volume-backup/README.md
+!production-vps/infra/docker-volume-backup/compose.yml
+!production-vps/infra/docker-volume-backup/justfile
+production-vps/nginx/nginx/htpasswd/
+production-vps/sing-box/conf/*secret*.json
+!production-vps/sing-box/conf/*secret*.json.example
+production-vps/youcal/yc-app-cli/my-todo.yml
+
+# YouCal bundled launcher scripts (JARs already ignored by *.jar)
+production-vps/youcal/yc-app-cli/yc-app-cli
+production-vps/youcal/yc-app-cli/yc-app-cli.bat
+
+# === Other ===
+# Ignore ask_human agent files (from legacy workflow)
+ask_human*.md
+agent-rsp/
+agent-plan/
+
+# Windows Zone.Identifier alternate data stream artifacts
+*:Zone.Identifier

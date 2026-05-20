@@ -1,0 +1,5 @@
+# services:
+#   qbittorrent-app:
+    # networks: # need to remove when network mode is
+    #   - default
+    #   - global-net

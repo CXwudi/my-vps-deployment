@@ -1,0 +1,11 @@
+services:
+  app:
+    environment:
+      APP_URL: ${APP_URL:-https://lobechat.mikufancx.cyou}
+    networks:
+      - nginx
+
+networks:
+  nginx:
+    name: ${HTTP_GLOBAL_NETWORK:-http-global-network}
+    external: true

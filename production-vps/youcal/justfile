@@ -1,0 +1,27 @@
+# One-shot operations for the scheduled YouCal job.
+
+compose_file := "docker-compose.yml"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Render the Compose config without running the job.
+config:
+  docker compose --env-file .env.example -f {{compose_file}} config
+
+# Run the one-shot job and return its exit code.
+run:
+  #!/usr/bin/env bash
+  set -uo pipefail
+
+  docker compose -f {{compose_file}} up --exit-code-from youcal
+  status=$?
+  docker compose -f {{compose_file}} down -v
+  exit "${status}"
+
+# Cron-friendly alias for the one-shot job.
+cron: run
+
+# Tear down any leftover YouCal container and anonymous volumes.
+down:
+  docker compose -f {{compose_file}} down -v

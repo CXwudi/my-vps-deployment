@@ -1,0 +1,14 @@
+# VPS cron entries for /home/cxwudi deployments.
+# Install manually with `crontab -e`; do not run this file as a shell script.
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# YouCal calendar generation. Writes an ignored run.log beside the service.
+1 0,1,2,3,4,5,8,12,14,16,18,21,23 * * * cd /home/cxwudi/youcal && just cron >> run.log 2>&1
+
+# LobeChat image update and restart. Writes an ignored update_log.txt beside the service.
+0 */6 * * * cd /home/cxwudi/LLMs/lobe-chat && just update env=prod >> update_log.txt 2>&1
+
+# Lego certificate renewal on the 1st and 15th of each month. Writes an ignored renewal.log beside the service.
+0 3 1,15 * * cd /home/cxwudi/lego && just refresh-existing >> renewal.log 2>&1

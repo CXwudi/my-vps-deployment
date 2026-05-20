@@ -1,0 +1,58 @@
+supported_envs := "debug prod"
+compose_base := "compose.base.yml"
+compose_prod := "compose.prod.yml"
+
+# Debug mode: tunnel only, no global-net (useful for connectivity testing)
+boot-debug:
+  docker compose -f {{compose_base}} up -d
+
+down-debug:
+  docker compose -f {{compose_base}} down
+
+# Production mode: tunnel + global-net for reverse-proxy access
+boot env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "debug" || "{{env}}" == "env=debug" ]]; then
+    compose_files="-f {{compose_base}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} up -d
+
+down env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "debug" || "{{env}}" == "env=debug" ]]; then
+    compose_files="-f {{compose_base}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} down
+
+reboot env="prod": (down env) (boot env)
+
+config env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "debug" || "{{env}}" == "env=debug" ]]; then
+    compose_files="-f {{compose_base}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} config

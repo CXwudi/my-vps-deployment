@@ -1,0 +1,38 @@
+services:
+  nginx:
+    image: nginx
+    restart: unless-stopped
+    container_name: nginx
+    volumes:
+      # copy configs without deleting other files internal
+      # files in /etc/nginx
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      # folders in /etc/nginx
+      - ./config/nginxconfig.io:/etc/nginx/nginxconfig.io:ro
+      - ./config/sites-enabled:/etc/nginx/sites-enabled:ro
+      - ./config/htpasswd:/etc/nginx/htpasswd:ro
+      # export logs
+      - ./logs:/var/log/nginx
+      # external files
+      # get certification
+      - ./certificate/letsencrypt-cert:/etc/ssl:ro
+      - ./certificate/dhparam.pem:/etc/nginx/dhparam.pem:ro
+    ports:
+      - "80:80/tcp"
+      - "80:80/udp"
+      - "443:443/tcp"
+      - "443:443/udp"
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # allow to access services on host
+    environment:
+      - TZ=America/New_York # set the correct timezone for better debugging
+    networks: 
+      - default
+      - global-net
+
+networks:
+  default:
+    name: nginx-defnet
+  global-net:
+    name: global-net
+    external: true

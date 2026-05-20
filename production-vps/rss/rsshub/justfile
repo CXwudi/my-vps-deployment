@@ -1,0 +1,54 @@
+supported_envs := "local prod"
+compose_base := "compose.base.yml"
+compose_local := "compose.local.yml"
+compose_prod := "compose.prod.yml"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+boot env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} up -d
+
+down env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} down
+
+config env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} config
+
+reboot env="prod": (down env) (boot env)

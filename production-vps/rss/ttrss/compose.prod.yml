@@ -1,0 +1,21 @@
+x-shared-env: &shared-env-prod
+  SELF_URL_PATH: ${TTRSS_SELF_URL_PATH_PROD:?TTRSS_SELF_URL_PATH_PROD must be set in .env}
+
+services:
+  service.rss:
+    ports:
+      - "${TTRSS_HOST_PORT:?TTRSS_HOST_PORT must be set in .env}:80"
+    environment:
+      <<: *shared-env-prod
+    networks:
+      - reverse-proxy
+      - rss-network
+      - default
+
+networks:
+  reverse-proxy:
+    name: ${HTTP_GLOBAL_NETWORK:-http-global-network}
+    external: true
+  rss-network:
+    name: ${RSS_GLOBAL_NETWORK:-rss-global-network}
+    external: true

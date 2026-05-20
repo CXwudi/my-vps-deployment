@@ -1,0 +1,11 @@
+# Local Debian crontab entries
+# Installation is manual — do not edit the live crontab from this repository.
+#
+# To install: crontab -u <user> crontab.txt
+
+# qBittorrent memory leak workaround — reboot twice daily
+# Run from the qbittorrent/ directory where the justfile lives
+0 1,11 * * * cd /home/cx/qbittorrent && just reboot-qb
+
+# STALE: Dify has moved to production-power-server. See production-power-server/dify/
+# 0 3 * * * PWD=/home/cx/dify ./upgrade-dify.sh

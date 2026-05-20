@@ -1,0 +1,31 @@
+services:
+  test:
+    image: curlimages/curl:latest
+    container_name: warp-test
+    command: /bin/sh -c "sleep 10 && curl --proxy socks5h://warp-proxy:1080 https://www.cloudflare.com/cdn-cgi/trace"
+    profiles:
+      - debug
+
+  warp-proxy:
+    image: aleskxyz/warp-svc:latest
+    container_name: warp-proxy
+    restart: unless-stopped
+    env_file:
+      - ${WARP_ENV_FILE:-.env.example}
+    ports:
+      # Sing-box host-network outbound reaches this through 127.0.0.1:3902.
+      - "${WARP_HOST_PORT:-3902}:1080"
+    environment:
+      WARP_LICENSE: ${WARP_LICENSE:-}
+    volumes:
+      - ./warp:/var/lib/cloudflare-warp
+    networks:
+      - nginx
+      - default
+
+networks:
+  default:
+    name: warp-defnet
+  nginx:
+    name: ${HTTP_GLOBAL_NETWORK:-http-global-network}
+    external: true

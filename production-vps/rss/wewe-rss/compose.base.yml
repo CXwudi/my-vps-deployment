@@ -1,0 +1,26 @@
+x-shared-env: &shared-env
+  DATABASE_URL: ${WEWE_RSS_DATABASE_URL:?WEWE_RSS_DATABASE_URL must be set in .env}
+  DATABASE_TYPE: ${WEWE_RSS_DATABASE_TYPE:?WEWE_RSS_DATABASE_TYPE must be set in .env}
+  AUTH_CODE: ${WEWE_RSS_AUTH_CODE:?WEWE_RSS_AUTH_CODE must be set in .env}
+  FEED_MODE: ${WEWE_RSS_FEED_MODE:?WEWE_RSS_FEED_MODE must be set in .env}
+  CRON_EXPRESSION: ${WEWE_RSS_CRON_EXPRESSION:?WEWE_RSS_CRON_EXPRESSION must be set in .env}
+  MAX_REQUEST_PER_MINUTE: ${WEWE_RSS_MAX_REQUEST_PER_MINUTE:?WEWE_RSS_MAX_REQUEST_PER_MINUTE must be set in .env}
+
+services:
+  wewe-rss:
+    image: cooderl/wewe-rss-sqlite:latest
+    container_name: wewe-rss-app
+    restart: unless-stopped
+    environment:
+      <<: *shared-env
+
+    volumes:
+      - wewe-sqlite-data:/app/data
+
+volumes:
+  wewe-sqlite-data:
+    name: wewe-sqlite-data
+
+networks:
+  default:
+    name: wewe-rss-defnet

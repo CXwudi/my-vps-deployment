@@ -1,0 +1,82 @@
+supported_envs := "local prod"
+compose_base := "compose.base.yml"
+compose_local := "compose.local.yml"
+compose_prod := "compose.prod.yml"
+
+boot env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} up -d
+
+down env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} down
+
+reboot env="prod": (down env) (boot env)
+
+config env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_prod}}"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    compose_files="-f {{compose_base}} -f {{compose_local}}"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  docker compose ${compose_files} config
+
+# Backup qBittorrent config and PeerBanHelper data volumes to ./backup/
+backup:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  docker compose -f {{compose_base}} create
+  docker run --rm --volumes-from qbittorrent-app -v "$(pwd)/backup:/backup" debian tar cvf /backup/qbittorrent-config.tar /config
+  docker run --rm --volumes-from qbittorrent-peerbanhelper -v "$(pwd)/backup:/backup" debian tar cvf /backup/peerbanhelper-data.tar /app/data
+  docker compose -f {{compose_base}} down
+  sudo chown -R "$USER:$USER" backup
+  echo "Backup created."
+
+# Restore qBittorrent config and PeerBanHelper data from ./backup/
+restore:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  docker compose -f {{compose_base}} create
+  docker run --rm --volumes-from qbittorrent-app -v "$(pwd)/backup:/backup" debian bash -c "rm -rf /config/* && tar xvf /backup/qbittorrent-config.tar -C /"
+  docker run --rm --volumes-from qbittorrent-peerbanhelper -v "$(pwd)/backup:/backup" debian bash -c "rm -rf /app/data/* && tar xvf /backup/peerbanhelper-data.tar -C /"
+  docker compose -f {{compose_base}} down
+  echo "Backup restoration completed."
+
+# Reboot qBittorrent to release potential memory leaks (scheduled workaround)
+reboot-qb:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  echo "Rebooting qbittorrent-app to release potential memory leaks"
+  docker compose -f {{compose_base}} -f {{compose_prod}} stop qbittorrent-app
+  docker compose -f {{compose_base}} -f {{compose_prod}} rm -f qbittorrent-app
+  docker compose -f {{compose_base}} -f {{compose_prod}} up -d qbittorrent-app
+  echo "qbittorrent-app rebooted"

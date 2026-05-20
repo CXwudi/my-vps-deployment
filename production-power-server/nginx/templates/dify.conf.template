@@ -1,0 +1,52 @@
+# Dify service nginx configuration template
+#
+# Required environment variables:
+#   BASE_DOMAIN      - Base domain (e.g., example.com)
+#   DIFY_SUBDOMAIN   - Subdomain for dify service (e.g., dify)
+#   DIFY_BACKEND     - Backend upstream URL (e.g., http://dify-nginx)
+
+server {
+  listen              443 ssl;
+  listen              [::]:443 ssl;
+  http2               on;
+  server_name         ${DIFY_SUBDOMAIN}.${BASE_DOMAIN};
+
+  # SSL
+  ssl_certificate     /etc/ssl/_.${BASE_DOMAIN}.crt;
+  ssl_certificate_key /etc/ssl/_.${BASE_DOMAIN}.key;
+
+  # security
+  include             nginxconfig.io/security.conf;
+
+  # logging
+  access_log          /var/log/nginx/${DIFY_SUBDOMAIN}.${BASE_DOMAIN}.access.log cloudflare buffer=512k flush=1m;
+  error_log           /var/log/nginx/${DIFY_SUBDOMAIN}.${BASE_DOMAIN}.error.log warn;
+
+  # docker DNS resolver
+  resolver              127.0.0.11 [::1]:5353 valid=15s;
+  set                   $backend "${DIFY_BACKEND}";
+
+  # reverse proxy
+  location / {
+    proxy_pass            $backend;
+    proxy_set_header Host $host;
+    include               nginxconfig.io/proxy.conf;
+  }
+
+  location ~* ^/mcp/ {
+    proxy_pass            $backend;
+    proxy_set_header Host $host;
+    include               nginxconfig.io/mcp_proxy.conf;
+  }
+
+  # additional config
+  include nginxconfig.io/general.conf;
+}
+
+# HTTP redirect
+server {
+  listen      80;
+  listen      [::]:80;
+  server_name ${DIFY_SUBDOMAIN}.${BASE_DOMAIN};
+  return      301 https://${DIFY_SUBDOMAIN}.${BASE_DOMAIN}$request_uri;
+}

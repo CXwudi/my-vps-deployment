@@ -1,0 +1,24 @@
+# Operations for VPS Watchtower.
+
+compose_file := "compose.yml"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Render the Compose config without starting containers.
+config:
+  docker compose -f {{compose_file}} config
+
+# Start Watchtower.
+boot:
+  docker compose -f {{compose_file}} up -d
+
+# Stop Watchtower.
+down:
+  docker compose -f {{compose_file}} down
+
+# Show recent Watchtower logs.
+logs lines="100":
+  docker compose -f {{compose_file}} logs --tail {{lines}} watchtower
+
+reboot: down boot

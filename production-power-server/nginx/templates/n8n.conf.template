@@ -1,0 +1,52 @@
+# N8N service nginx configuration template
+#
+# Required environment variables:
+#   BASE_DOMAIN      - Base domain (e.g., example.com)
+#   N8N_SUBDOMAIN    - Subdomain for n8n service (e.g., n8n)
+#   N8N_BACKEND      - Backend upstream URL (e.g., http://n8n-main:5678)
+
+server {
+  listen              443 ssl;
+  listen              [::]:443 ssl;
+  http2               on;
+  server_name         ${N8N_SUBDOMAIN}.${BASE_DOMAIN};
+
+  # SSL
+  ssl_certificate     /etc/ssl/_.${BASE_DOMAIN}.crt;
+  ssl_certificate_key /etc/ssl/_.${BASE_DOMAIN}.key;
+
+  # security
+  include             nginxconfig.io/security.conf;
+
+  # logging
+  access_log          /var/log/nginx/${N8N_SUBDOMAIN}.${BASE_DOMAIN}.access.log cloudflare buffer=512k flush=1m;
+  error_log           /var/log/nginx/${N8N_SUBDOMAIN}.${BASE_DOMAIN}.error.log warn;
+
+  # docker DNS resolver
+  resolver              127.0.0.11 [::1]:5353 valid=15s;
+  set                   $backend "${N8N_BACKEND}";
+
+  # reverse proxy
+  location / {
+    proxy_pass            $backend;
+    proxy_set_header Host $host;
+    include               nginxconfig.io/proxy.conf;
+  }
+
+  location ~* ^/(mcp|mcp-test)/ {
+    proxy_pass            $backend;
+    proxy_set_header Host $host;
+    include               nginxconfig.io/mcp_proxy.conf;
+  }
+
+  # additional config
+  include nginxconfig.io/general.conf;
+}
+
+# HTTP redirect
+server {
+  listen      80;
+  listen      [::]:80;
+  server_name ${N8N_SUBDOMAIN}.${BASE_DOMAIN};
+  return      301 https://${N8N_SUBDOMAIN}.${BASE_DOMAIN}$request_uri;
+}

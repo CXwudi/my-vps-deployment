@@ -1,0 +1,71 @@
+# Please do not directly edit this file. Instead, modify the .env variables related to NGINX configuration.
+
+server {
+    listen ${NGINX_PORT};
+    server_name ${NGINX_SERVER_NAME};
+
+    resolver              127.0.0.11 [::1]:5353 valid=15s;
+    set                   $api_backend "http://api:5001";
+    set                   $web_backend "http://web:3000";
+    set                   $plugin_daemon_backend "http://plugin_daemon:5002";
+
+    location /console/api {
+      proxy_pass $api_backend;
+      include proxy.conf;
+    }
+
+    location /api {
+      proxy_pass $api_backend;
+      include proxy.conf;
+    }
+
+    location /socket.io/ {
+      proxy_pass $api_backend;
+      include proxy.conf;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_cache_bypass $http_upgrade;
+    }
+
+    location /v1 {
+      proxy_pass $api_backend;
+      include proxy.conf;
+    }
+
+    location /files {
+      proxy_pass $api_backend;
+      include proxy.conf;
+    }
+
+    location /explore {
+      proxy_pass $web_backend;
+      include proxy.conf;
+    }
+
+    location /e/ {
+      proxy_pass $plugin_daemon_backend;
+      proxy_set_header Dify-Hook-Url $scheme://$host$request_uri;
+      include proxy.conf;
+    }
+
+    location /mcp {
+      proxy_pass $api_backend;
+      include proxy.conf;
+    }
+
+    location /triggers {
+      proxy_pass $api_backend;
+      include proxy.conf;
+    }
+
+    location / {
+      proxy_pass $web_backend;
+      include proxy.conf;
+    }
+
+    # placeholder for acme challenge location
+    ${ACME_CHALLENGE_LOCATION}
+
+    # placeholder for https config defined in https.conf.template
+    ${HTTPS_CONFIG}
+}

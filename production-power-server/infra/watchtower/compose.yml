@@ -1,0 +1,18 @@
+services:
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    env_file:
+      - .env
+    environment:
+      - WATCHTOWER_SCHEDULE=0 3 * * * # everyday at 3 am
+      # scope is necessary when setting up multiple watchtower, none scope is special as container without labels belongs to this scope
+      # see https://containrrr.dev/watchtower/running-multiple-instances/
+      - WATCHTOWER_SCOPE=none 
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock 
+    restart: always
+
+networks:
+  default:
+    name: watchtower-defnet

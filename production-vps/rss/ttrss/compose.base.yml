@@ -1,0 +1,70 @@
+x-rss-env: &rss-env
+  ALLOW_PORTS: ${TTRSS_ALLOW_PORTS:?TTRSS_ALLOW_PORTS must be set in .env}
+  PUID: ${TTRSS_PUID:?TTRSS_PUID must be set in .env}
+  PGID: ${TTRSS_PGID:?TTRSS_PGID must be set in .env}
+  DB_NAME: ${TTRSS_DB_NAME:?TTRSS_DB_NAME must be set in .env}
+  DB_USER: ${TTRSS_DB_USER:?TTRSS_DB_USER must be set in .env}
+  DB_PASS: ${TTRSS_DB_PASS:?TTRSS_DB_PASS must be set in .env}
+  DB_HOST: ${TTRSS_DB_HOST:?TTRSS_DB_HOST must be set in .env}
+  DB_PORT: ${TTRSS_DB_PORT:-5432}
+  SESSION_COOKIE_LIFETIME: ${TTRSS_SESSION_COOKIE_LIFETIME:?TTRSS_SESSION_COOKIE_LIFETIME must be set in .env}
+  FEED_LOG_QUIET: ${TTRSS_FEED_LOG_QUIET:-false}
+
+x-opencc-env: &opencc-env
+  NODE_ENV: ${TTRSS_OPENCC_NODE_ENV:?TTRSS_OPENCC_NODE_ENV must be set in .env}
+
+x-postgres-env: &postgres-env
+  POSTGRES_USER: ${TTRSS_DB_USER:?TTRSS_DB_USER must be set in .env}
+  POSTGRES_DB: ${TTRSS_DB_NAME:?TTRSS_DB_NAME must be set in .env}
+  POSTGRES_PASSWORD: ${TTRSS_DB_PASS:?TTRSS_DB_PASS must be set in .env}
+
+services:
+  service.rss:
+    image: wangqiru/ttrss:latest
+    container_name: ttrss-app
+    environment:
+      <<: *rss-env
+    volumes:
+      - feed-icons:/var/www/cache/feed-icons/
+      # Mount only plugins.local; replacing /var/www breaks image-provided files.
+      - plugins:/var/www/plugins.local/
+      # Local patch until the upstream entrypoint workaround is no longer needed.
+      - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  service.mercury:
+    image: wangqiru/mercury-parser-api:latest
+    container_name: ttrss-mercury
+    restart: unless-stopped
+
+  service.opencc:
+    image: wangqiru/opencc-api-server:latest
+    container_name: ttrss-opencc
+    environment:
+      <<: *opencc-env
+    restart: unless-stopped
+
+  database.postgres:
+    image: postgres:17-alpine
+    container_name: ttrss-postgres
+    environment:
+      <<: *postgres-env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    labels:
+      - docker-volume-backup.stop-during-backup=ttrss-postgres-data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    name: ttrss-postgres-data
+  feed-icons:
+    name: ttrss-feed-icons
+  plugins:
+    name: ttrss-plugins
+
+networks:
+  default:
+    name: ttrss-defnet

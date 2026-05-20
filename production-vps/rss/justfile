@@ -1,0 +1,96 @@
+# Group-level orchestration for RSS services.
+
+supported_envs := "local prod"
+rss_root := justfile_directory()
+rss_network := "rss-global-network"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Create the shared RSS bridge network used for cross-service RSS traffic.
+create-net:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if docker network inspect {{rss_network}} >/dev/null 2>&1; then
+    exit 0
+  fi
+
+  docker network create {{rss_network}}
+
+# Remove the shared RSS bridge network.
+remove-net:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if ! docker network inspect {{rss_network}} >/dev/null 2>&1; then
+    exit 0
+  fi
+
+  docker network rm {{rss_network}}
+
+# Backward-compatible alias for the older recipe name.
+shutdown-net: remove-net
+
+# Boot RSSHub, WeWe RSS, and Tiny Tiny RSS.
+boot env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    target_env="prod"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    target_env="local"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  just --justfile {{justfile()}} create-net
+  just --justfile {{rss_root}}/rsshub/justfile boot "env=${target_env}"
+  just --justfile {{rss_root}}/wewe-rss/justfile boot "env=${target_env}"
+  just --justfile {{rss_root}}/ttrss/justfile boot "env=${target_env}"
+
+# Stop RSS services and remove the shared RSS network when unused.
+down env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    target_env="prod"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    target_env="local"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  just --justfile {{rss_root}}/ttrss/justfile down "env=${target_env}"
+  just --justfile {{rss_root}}/wewe-rss/justfile down "env=${target_env}"
+  just --justfile {{rss_root}}/rsshub/justfile down "env=${target_env}"
+  just --justfile {{justfile()}} remove-net
+
+# Render all RSS service compose configs without starting containers.
+config env="prod":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  if [[ "{{env}}" == "prod" || "{{env}}" == "env=prod" ]]; then
+    target_env="prod"
+  elif [[ "{{env}}" == "local" || "{{env}}" == "env=local" ]]; then
+    target_env="local"
+  else
+    echo "Unsupported environment '{{env}}'. Expected one of: {{supported_envs}}." >&2
+    exit 1
+  fi
+
+  just --justfile {{rss_root}}/rsshub/justfile config "env=${target_env}"
+  just --justfile {{rss_root}}/wewe-rss/justfile config "env=${target_env}"
+  just --justfile {{rss_root}}/ttrss/justfile config "env=${target_env}"
+
+reboot env="prod": (down env) (boot env)
+
+# Backward-compatible aliases for host-level orchestration naming.
+boot-all env="prod": (boot env)
+down-all env="prod": (down env)
+reboot-all env="prod": (reboot env)

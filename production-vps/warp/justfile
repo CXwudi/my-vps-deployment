@@ -1,0 +1,28 @@
+# Operations for the Warp SOCKS proxy helper.
+
+compose_file := "compose.yml"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Render Compose config without starting containers.
+config:
+  docker compose --env-file .env.example -f {{compose_file}} config
+
+# Start Warp proxy.
+boot:
+  docker compose -f {{compose_file}} up -d warp-proxy
+
+# Stop Warp proxy.
+down:
+  docker compose -f {{compose_file}} down
+
+# Run the debug curl profile through Warp.
+test:
+  docker compose -f {{compose_file}} --profile debug run --rm test
+
+# Show recent Warp logs.
+logs lines="100":
+  docker compose -f {{compose_file}} logs --tail {{lines}} warp-proxy
+
+reboot: down boot

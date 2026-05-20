@@ -1,0 +1,7 @@
+boot:
+  docker compose up -d
+
+down:
+  docker compose down
+
+reboot: down boot

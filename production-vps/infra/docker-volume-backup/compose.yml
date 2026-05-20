@@ -1,0 +1,30 @@
+services:
+  volume-backup:
+    image: offen/docker-volume-backup:latest
+    container_name: docker-volume-backup
+    restart: unless-stopped
+    env_file:
+      - ${DOCKER_VOLUME_BACKUP_DEFAULT_ENV_FILE:-default.env}
+      - ${DOCKER_VOLUME_BACKUP_GLOBAL_ENV_FILE:-global.env}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config:/etc/dockervolumebackup/conf.d:ro
+      - ../backup-files:/archive
+      - ttrss-postgres-data:/backup/ttrss-postgres-data:ro
+      - rsshub-redis-data:/backup/rsshub-redis-data:ro
+      - lobechat-db:/backup/lobechat-db:ro
+
+volumes:
+  ttrss-postgres-data:
+    name: ${TTRSS_POSTGRES_DATA_NAME:-ttrss-postgres-data}
+    external: true
+  rsshub-redis-data:
+    name: ${RSSHUB_REDIS_DATA_NAME:-rsshub-redis-data}
+    external: true
+  lobechat-db:
+    name: ${LOBECHAT_PGVECTOR_DATA_NAME:-lobechat-db}
+    external: true
+
+networks:
+  default:
+    name: docker-volume-backup-defnet

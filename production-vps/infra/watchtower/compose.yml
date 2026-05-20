@@ -1,0 +1,19 @@
+services:
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    env_file:
+      - ${WATCHTOWER_ENV_FILE:-.env.example}
+    environment:
+      WATCHTOWER_SCHEDULE: ${WATCHTOWER_SCHEDULE:-0 22 * * *}
+      # The none scope updates containers without a watchtower scope label.
+      WATCHTOWER_SCOPE: ${WATCHTOWER_SCOPE:-none}
+      WATCHTOWER_CLEANUP: ${WATCHTOWER_CLEANUP:-true}
+      TZ: ${TZ:-America/New_York}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  default:
+    name: watchtower-defnet

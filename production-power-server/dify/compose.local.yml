@@ -1,0 +1,30 @@
+x-shared-env: &shared-api-worker-env-local
+  FILES_URL: http://localhost:3901 # used for frontend to display preview, need external access
+  TRIGGER_URL: http://localhost:3901
+  # MULTIMODAL_SEND_IMAGE_FORMAT: url
+  ENDPOINT_URL_TEMPLATE: http://localhost:3901/e/{hook_id}
+
+
+services:
+  api:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-local
+  worker:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-local
+
+  worker_beat:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-local
+
+  web:
+    environment:
+      NEXT_PUBLIC_SOCKET_URL: ws://localhost:3901 # used for workflow collaboration
+
+  plugin_daemon:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-local

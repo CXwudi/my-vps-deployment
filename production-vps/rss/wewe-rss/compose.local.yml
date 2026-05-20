@@ -1,0 +1,9 @@
+x-shared-env: &shared-env-local
+  SERVER_ORIGIN_URL: ${WEWE_RSS_SERVER_ORIGIN_URL_LOCAL:?WEWE_RSS_SERVER_ORIGIN_URL_LOCAL must be set in .env}
+
+services:
+  wewe-rss:
+    environment:
+      <<: *shared-env-local
+    ports:
+      - '${WEWE_RSS_HOST_PORT:?WEWE_RSS_HOST_PORT must be set in .env}:4000'

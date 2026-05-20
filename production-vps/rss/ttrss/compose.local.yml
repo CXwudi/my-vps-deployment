@@ -1,0 +1,9 @@
+x-shared-env: &shared-env-local
+  SELF_URL_PATH: ${TTRSS_SELF_URL_PATH_LOCAL:?TTRSS_SELF_URL_PATH_LOCAL must be set in .env}
+
+services:
+  service.rss:
+    ports:
+      - "${TTRSS_HOST_PORT:?TTRSS_HOST_PORT must be set in .env}:80"
+    environment:
+      <<: *shared-env-local

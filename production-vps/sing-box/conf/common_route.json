@@ -1,0 +1,67 @@
+{
+  "route": {
+    // for server side, it is ok to just download the geoip and geosite on startup
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "geosite-openai",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-openai.srs",
+        "download_detour": "direct"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-ookla-speedtest",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-ookla-speedtest.srs",
+        "download_detour": "direct"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-pixiv",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-pixiv.srs",
+        "download_detour": "direct"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-niconico",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-niconico.srs",
+        "download_detour": "direct"
+      }
+    ],
+    "rules": [
+      {
+        // sniff for every incoming traffic
+        // sniff is not required if properly setup the client to use Tun with FakeIP (which sends domain instead of resolving domain to IP and sends IP). However, clients can use TUN without proxy alongside and without FakeIP (which garantte to send IP)
+        // However, as shown in https://sing-box.sagernet.org/faq/fakeip/, only A and AAAA DNS requests can be fakeIP-ed. So other types like UDP without domain or ICMP/CNAME might not be routed. Also direct IP connections are not routed.
+        "action": "sniff",
+        "timeout": "240ms"
+      },
+      { // DNS hijacking, only works if sniffing is enabled
+        // required for using our own DNS server
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      { // route those block VPS traffic to Cloudflare Warp
+        "rule_set": [
+          "geosite-openai", // route OpenAI for sure
+          "geosite-ookla-speedtest", // just for testing purpose
+          "geosite-pixiv",
+          "geosite-niconico" // niconico nows block proxy IPs, requires warp, see https://www.bilibili.com/opus/965938488733073442
+        ],
+        "domain_suffix": [
+          "saucenao.com" // to un-ban quick search from tempermonkey script
+        ],
+        "domain_keyword": [
+          "ticketmaster" // prevent access failure
+        ],
+        "outbound": "warp-out"
+      }
+    ],
+    // otherwise, just connect normally
+    "final": "direct",
+    "auto_detect_interface": true
+  }
+}

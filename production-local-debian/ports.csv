@@ -1,0 +1,8 @@
+Port,Service,Assigned Domain Prefix
+3900,AdGuard Home,
+3902,qBittorrent,qb
+39001,Torrent traffic,
+3903,PeerBanHelper,
+3904,OpenList,
+# STALE: Dify moved to production-power-server (was port 3901)
+# REMOVED: Open Web UI deleted (was port 3905)

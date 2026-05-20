@@ -1,0 +1,1 @@
+Add our own server {} block that can not be generated using digital ocean's nginx configuration generator.

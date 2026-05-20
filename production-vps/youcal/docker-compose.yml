@@ -1,0 +1,12 @@
+services:
+  youcal:
+    image: ${YOUCAL_IMAGE:-yc-app-cli:1.0.0}
+    container_name: youcal
+    volumes:
+      - ${YOUCAL_OUTPUT_DIR:-../public-files/sub}:/output
+      - ${YOUCAL_CONFIG_DIR:-./yc-app-cli}:/etc/youcal:ro
+    environment:
+      UID: ${YOUCAL_UID:-1000}
+      GID: ${YOUCAL_GID:-1000}
+      "CLIAPP_IO_OUTPUT-FILE": ${YOUCAL_OUTPUT_FILE:-/output/my-todo.ics}
+    command: --spring.config.import=${YOUCAL_CONFIG_FILE:-/etc/youcal/my-todo.yml}

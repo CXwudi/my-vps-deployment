@@ -1,0 +1,15 @@
+{
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "socks",
+      "tag": "warp-out",
+      "server": "127.0.0.1",
+      "server_port": 3902
+      // not sure if udp_over_tcp is working here, because it uses sing-box specific implementation
+    }
+  ]
+}

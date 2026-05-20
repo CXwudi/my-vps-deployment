@@ -1,0 +1,26 @@
+
+services:
+  adguardhome:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
+    restart: unless-stopped
+    volumes:
+      - ./adguard/data:/opt/adguardhome/work
+      - ./adguard/conf:/opt/adguardhome/conf
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      # - "67:67/udp" # Enable DHCP server
+      # - "68:68/tcp" # Enable local DHCP client's secure exchange
+      # - "80:80/tcp"
+      # - "443:443/tcp"
+      - "3900:3000/tcp"  # Admin Web Interface
+    environment:
+      - TZ=America/New_York
+    user: 1000:1000
+
+networks:
+  default:
+    name: adguard-defnet
+
+ 

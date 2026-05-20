@@ -1,0 +1,5 @@
+services:
+  cloudflare-tunnel:
+    networks:
+      - default
+      - global-net

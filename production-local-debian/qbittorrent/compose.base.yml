@@ -1,0 +1,79 @@
+services:
+  qbittorrent-app:
+    # about qbittorrent mem leak problem: https://github.com/arvidn/libtorrent/issues/6667
+    # workaround, see comments https://github.com/arvidn/libtorrent/issues/6667#issuecomment-1502670412 and below
+    image: lscr.io/linuxserver/qbittorrent # :libtorrentv1
+    container_name: qbittorrent-app
+    restart: unless-stopped
+    # network_mode: host # to eliminate double-nat and make upnp working
+    environment:
+      #- PAGID=10000
+      - PGID=1000
+      - PUID=1000
+      - WEBUI_PORT=${WEBUI_PORT:-3902}
+      - TORRENTING_PORT=${TORRENTING_PORT:-39001}
+      - ADD_TRACKERS_APP_PORT=${ADD_TRACKERS_APP_PORT:-8080}
+      - TZ=America/New_York
+      # install alternative webui, see https://github.com/VueTorrent/VueTorrent/wiki/Installation#using-lsio-docker-mod
+      - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest # set file location to /vuetorrent
+    ports: # no longer needed under host network mode
+      # for bittorrent traffic
+      # NOTE: must change the port in the setting, upon first time sign in 
+      - ${TORRENTING_PORT}:${TORRENTING_PORT}/tcp
+      - ${TORRENTING_PORT}:${TORRENTING_PORT}/udp
+      # for WebUI
+      # NOTE: webui port mapping must be same
+      - ${WEBUI_PORT}:${WEBUI_PORT}/tcp # let's keep this port open so that peer ban helper can access no matter if we use host network mode or not
+    volumes:
+      - qbittorrent-config:/config
+      - ../torrent-download:/downloads
+      - ./add-tracker-app-stuffs/run_on_add.sh:/run_on_add.sh
+    deploy:
+      resources:
+        limits:
+          memory: 2.0g # try to prevent mem leak
+    
+  
+  peerbanhelper:
+    image: ghostchu/peerbanhelper
+    restart: unless-stopped
+    container_name: qbittorrent-peerbanhelper
+    volumes:
+      - peerbanhelper-data:/app/data
+    ports:
+      - "3903:9898"
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # allow to access services on host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    depends_on:
+      - qbittorrent-app
+
+  qbittorrent-add-trackers:
+    image: cxwudi/qbittorrent-add-trackers:latest
+    container_name: qbittorrent-add-trackers-app
+    environment:
+      - APP__QBITTORRENT__URL=http://qbittorrent-app:${WEBUI_PORT}
+      - APP__QBITTORRENT__PASSWORD=${QBITTORRENT_PASSWORD:?Error, QBITTORRENT_PASSWORD is not set in .env file}
+      - APP__FLASK__PORT=${ADD_TRACKERS_APP_PORT}
+    volumes:
+      - ./add-tracker-app-stuffs/config.yaml:/app/config.yaml
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent-app
+
+
+networks:
+  default:
+    name: qbittorrent-defnet
+  global-net:
+    name: global-net
+    external: true
+
+volumes:
+  qbittorrent-config:
+    name: qbittorrent-config
+  peerbanhelper-data:
+    name: peerbanhelper-data

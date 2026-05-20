@@ -1,0 +1,23 @@
+services:
+  fake-site:
+    image: nginx:latest
+    restart: unless-stopped
+    container_name: fake-site-entry
+    ports:
+      # The fifth host port reserved on this VPS.
+      - "${FAKE_SITE_HOST_PORT:-3904}:81"
+    volumes:
+      - ./conf/:/etc/nginx/conf.d/:ro
+      - ../certification/letsencrypt-cert:/etc/ssl:ro
+      - ../certification/dhparam.pem:/etc/nginx/dhparam.pem:ro
+      - ./logs:/var/log/nginx
+    networks:
+      - default
+      - nginx
+
+networks:
+  default:
+    name: fake-site-defnet
+  nginx:
+    name: ${HTTP_GLOBAL_NETWORK:-http-global-network}
+    external: true

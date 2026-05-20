@@ -1,0 +1,39 @@
+x-shared-env: &shared-api-worker-env-prod
+  FILES_URL: https://dify.mikufancx.cyou # used for frontend to display preview, need external access
+  TRIGGER_URL: https://dify.mikufancx.cyou
+  # MULTIMODAL_SEND_IMAGE_FORMAT: url
+  ENDPOINT_URL_TEMPLATE: https://dify.mikufancx.cyou/e/{hook_id}
+  
+services:
+  api:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-prod
+  worker:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-prod
+
+  worker_beat:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-prod
+    
+  web:
+    environment:
+      NEXT_PUBLIC_SOCKET_URL: wss://dify.mikufancx.cyou # used for workflow collaboration
+
+  plugin_daemon:
+    environment:
+      # Use the shared environment variables.
+      <<: *shared-api-worker-env-prod
+
+  nginx:
+    networks:
+      - default
+      - global-net
+
+networks:
+  global-net:
+    name: global-net
+    external: true

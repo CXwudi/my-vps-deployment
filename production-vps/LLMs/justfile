@@ -1,0 +1,23 @@
+# Shared operations for VPS LLM support resources.
+
+set dotenv-load := false
+
+llm_network := "llm-http-global-network"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# List LLM support recipes without changing Docker state.
+list:
+  @just --justfile {{justfile()}} --list
+
+# Create the optional shared LLM bridge network used by legacy/disabled LLM services.
+create-net:
+  docker network create --driver bridge {{llm_network}}
+
+# Remove the optional shared LLM bridge network.
+remove-net:
+  docker network rm {{llm_network}}
+
+# Backward-compatible alias for older script naming.
+delete-net: remove-net

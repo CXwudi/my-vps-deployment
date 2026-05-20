@@ -1,0 +1,20 @@
+
+services:
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN:?Error, CF_TUNNEL_TOKEN is not set in .env file}
+    restart: unless-stopped
+
+  nginx:
+    image: nginx
+    container_name: nginx-for-test
+    profiles:
+      - test
+
+networks:
+  default:
+    name: cloudflare-tunnel-defnet
+  global-net:
+    name: global-net
+    external: true

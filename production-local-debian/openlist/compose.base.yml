@@ -1,0 +1,44 @@
+x-shared-env: &shared-env
+  TZ: ${TZ}
+  UMASK: ${UMASK}
+  OPENLIST_ADMIN_PASSWORD: ${OPENLIST_ADMIN_PASSWORD}
+
+services:
+  openlist:
+    image: openlistteam/openlist:latest-aio
+    container_name: openlist
+    user: "${UID}:${GID}"
+    restart: unless-stopped
+    environment:
+      <<: *shared-env
+    # OpenList config file: /opt/openlist/data/config.json
+    volumes:
+      - openlist-data:/opt/openlist/data
+      - openlist-share:/data
+      - ../torrent-download:/data/torrent-download:ro
+    ports:
+      - "3904:5244"
+  openlist-volume-init:
+    image: busybox:latest
+    container_name: openlist-volume-init
+    profiles:
+      - init
+    user: "0:0"
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - chown -R ${UID}:${GID} /opt/openlist/data /data
+    volumes:
+      - openlist-data:/opt/openlist/data
+      - openlist-share:/data
+
+networks:
+  default:
+    name: openlist-defnet
+
+volumes:
+  openlist-data:
+    name: openlist-data
+  openlist-share:
+    name: openlist-share

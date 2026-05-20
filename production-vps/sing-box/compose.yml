@@ -1,0 +1,18 @@
+services:
+  sing-box:
+    image: ${SING_BOX_IMAGE:-gzxhwq/sing-box:latest}
+    container_name: sing-box-server
+    # Host networking is required here for full-cone NAT behavior and host port access.
+    network_mode: host
+    volumes:
+      - ${SING_BOX_CONFIG_DIR:-./conf}:/usr/local/bin/conf:ro
+      - ${SING_BOX_LOG_DIR:-./logs}:/usr/local/bin/logs
+    environment:
+      TZ: ${SING_BOX_TZ:-America/New_York}
+    working_dir: /usr/local/bin
+    command: run --config-directory ./conf
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    restart: unless-stopped

@@ -1,0 +1,24 @@
+# Operations for Sing-box. This service intentionally uses host networking.
+
+compose_file := "compose.yml"
+
+_default:
+  @just --justfile {{justfile()}} --list
+
+# Render Compose config without starting containers.
+config:
+  docker compose --env-file .env.example -f {{compose_file}} config
+
+# Start Sing-box.
+boot:
+  docker compose -f {{compose_file}} up -d
+
+# Stop Sing-box.
+down:
+  docker compose -f {{compose_file}} down
+
+# Show recent Sing-box logs.
+logs lines="100":
+  docker compose -f {{compose_file}} logs --tail {{lines}} sing-box
+
+reboot: down boot
