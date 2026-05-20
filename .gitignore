@@ -149,6 +149,9 @@ production-vps/youcal/yc-app-cli/my-todo.yml
 production-vps/youcal/yc-app-cli/yc-app-cli
 production-vps/youcal/yc-app-cli/yc-app-cli.bat
 
+# === Agent/IDE files ===
+.codex
+
 # === Other ===
 # Ignore ask_human agent files (from legacy workflow)
 ask_human*.md
