@@ -16,8 +16,11 @@ services:
       # App
       ACCESS_CODE: ${ACCESS_CODE:-}
       KEY_VAULTS_SECRET: ${KEY_VAULTS_SECRET:?KEY_VAULTS_SECRET must be set in .env}
+      INTERNAL_APP_URL: ${INTERNAL_APP_URL:-http://localhost:3210}
       # Auth
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET must be set in .env}
+      ENABLE_OIDC: ${ENABLE_OIDC:-1}
+      JWKS_KEY: ${JWKS_KEY:?JWKS_KEY must be set in .env}
       AUTH_SSO_PROVIDERS: ${AUTH_SSO_PROVIDERS:-auth0}
       AUTH_ALLOWED_EMAILS: ${AUTH_ALLOWED_EMAILS:-}
       AUTH_AUTH0_ID: ${AUTH_AUTH0_ID:-}
