@@ -163,8 +163,6 @@ services:
     <<: *shared-api-worker-config
     image: langgenius/dify-api:${DIFY_VERSION:?DIFY_VERSION must be set in .env}
     container_name: dify-api-websocket
-    profiles:
-      - collaboration
     environment:
       MODE: api
       SERVER_WORKER_AMOUNT: 1
