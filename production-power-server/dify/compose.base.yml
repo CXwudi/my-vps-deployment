@@ -1,28 +1,41 @@
-# Copied and modified from https://raw.githubusercontent.com/langgenius/dify/refs/heads/main/docker/docker-compose.yaml
-# modification I made includes:
-# 1. adding proper naming to containers, networks, volumes. 
-# 2. use volumes whenever possible. 
-# 3. removed docker services with non-default profile. 
-# 4. using latest version tag for services that make sense to do so.
-# 5. similarly for dify core services, uses env var for versioning.
-# 6. changing restart policy to unless-stopped.
-# 7. added labels and deploy sections, etc
-# 8. switch default vector store from Weaviate to Qdrant
-# 9. postgres db updated to version 17
-# 10. no ssl/certbot handle as production deployment is ran behind a reverse proxy that handle ssl termination
-# 11. removed certbot volume in nginx service
-# 12. controlled version for dify services, via env var
+# Based on Dify upstream Docker Compose:
+# https://raw.githubusercontent.com/langgenius/dify/refs/heads/main/docker/docker-compose.yaml
+#
+# Local deployment conventions:
+# 1. Add explicit names to containers, networks, and volumes.
+# 2. Use named Docker volumes whenever possible.
+# 3. Preserve only the services needed by this deployment; omit unused upstream profiles.
+# 4. Keep Dify core image versions controlled by DIFY_VERSION / PLUGIN_DAEMON_VERSION.
+# 5. Use latest tags only for supporting images where that is intentional.
+# 6. Use restart: unless-stopped instead of upstream restart: always.
+# 7. Keep Watchtower opt-out labels for Dify-managed services.
+# 8. Use Qdrant as the default vector store instead of Weaviate.
+# 9. Use Postgres 17 for the database service.
+# 10. Do not include certbot handling because SSL terminates at the outer reverse proxy.
+#
+# Environment layering:
+# - upstream.default.env is a tracked copy of upstream docker/.env.example.
+# - optional envs/**/*.env files may be added later for category-specific overrides.
+# - .env is ignored and contains this deployment's private/local overrides.
+# - Later env files win for container env_file values.
+# - justfile passes --env-file upstream.default.env --env-file .env so .env also
+#   wins for compose-time ${VAR} interpolation.
+#
+# For LLM/agent updates:
+# 1. Read the relevant upstream docker-compose.yaml and docker/.env.example first.
+# 2. Refresh upstream.default.env from the target Dify release when defaults change.
+# 3. Keep the optional envs/**/*.env paths as extension points, but do not add
+#    envs/**/*.env.example files unless the user asks for that split.
+# 4. If upstream adds services or required behavior outside the local conventions
+#    above, summarize the delta and ask the user before porting it.
+# 5. Apply updates incrementally instead of replacing large sections at once.
 
-# For LLM, if you are asked to update this compose file, use tool to read the whole content from docker-compose.yaml file from above link, and do two things:
-#   1. update these env_file anchors and the split env example files from upstream
-#   2. check for docker services, if upstream has added any update other than the modification mentioned above
-#      - if so, summarize and ask the user what to do with the update
-# Note: do the update incrementally in small pieces of changes, instead of a replacing whole section in one try
-
-# Shared configuration using YAML anchors and split env files.
-# Optional env files mirror upstream Dify; ./.env keeps deployment-specific overrides.
+# Shared configuration using YAML anchors and layered env files.
+# upstream.default.env mirrors upstream Dify defaults, optional envs/* files can
+# override categories when added, and ./.env keeps deployment-specific overrides.
 x-shared-api-worker-config: &shared-api-worker-config
   env_file:
+    - ./upstream.default.env
     - path: ./envs/core-services/shared.env
       required: false
     - path: ./envs/core-services/api.env
@@ -47,6 +60,7 @@ x-shared-api-worker-config: &shared-api-worker-config
 
 x-shared-worker-config: &shared-worker-config
   env_file:
+    - ./upstream.default.env
     - path: ./envs/core-services/shared.env
       required: false
     - path: ./envs/core-services/worker.env
@@ -71,6 +85,7 @@ x-shared-worker-config: &shared-worker-config
 
 x-shared-worker-beat-config: &shared-worker-beat-config
   env_file:
+    - ./upstream.default.env
     - path: ./envs/core-services/shared.env
       required: false
     - path: ./envs/core-services/worker-beat.env
@@ -260,6 +275,7 @@ services:
     container_name: dify-web
     restart: unless-stopped
     env_file:
+      - ./upstream.default.env
       - path: ./envs/core-services/web.env
         required: false
       - path: ./envs/security.env
@@ -343,6 +359,7 @@ services:
     container_name: dify-sandbox
     restart: unless-stopped
     env_file:
+      - ./upstream.default.env
       - path: ./envs/core-services/sandbox.env
         required: false
       - path: ./envs/security.env
@@ -374,6 +391,7 @@ services:
     container_name: dify-plugin-daemon
     restart: unless-stopped
     env_file:
+      - ./upstream.default.env
       - path: ./envs/core-services/shared.env
         required: false
       - path: ./envs/core-services/plugin-daemon.env

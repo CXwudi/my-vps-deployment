@@ -1,0 +1,2 @@
+# Track the upstream default env snapshot for this deployment.
+!upstream.default.env

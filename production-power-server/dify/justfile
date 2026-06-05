@@ -2,6 +2,23 @@ supported_envs := "local prod"
 compose_base := "compose.base.yml"
 compose_local := "compose.local.yml"
 compose_prod := "compose.prod.yml"
+compose_default_env := "upstream.default.env"
+compose_override_env := ".env"
+
+refresh-upstream-default ref="1.14.2":
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  raw_ref="{{ref}}"
+  if [[ "${raw_ref}" == "latest" || "${raw_ref}" == "main" || "${raw_ref}" == "master" ]]; then
+    upstream_ref="refs/heads/main"
+  else
+    upstream_ref="${raw_ref}"
+  fi
+
+  url="https://raw.githubusercontent.com/langgenius/dify/${upstream_ref}/docker/.env.example"
+  curl -fsSL "${url}" -o "{{compose_default_env}}"
+  echo "Updated {{compose_default_env}} from ${url}"
 
 boot env="prod":
   #!/usr/bin/env bash
@@ -16,7 +33,7 @@ boot env="prod":
     exit 1
   fi
 
-  docker compose ${compose_files} up -d
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} ${compose_files} up -d
 
 down env="prod":
   #!/usr/bin/env bash
@@ -31,7 +48,7 @@ down env="prod":
     exit 1
   fi
 
-  docker compose ${compose_files} down
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} ${compose_files} down
 
 reboot env="prod": (down env) (boot env)
 
@@ -65,7 +82,7 @@ backup backup_dir="../dify-backups":
   containers=(dify-qdrant dify-redis dify-db dify-api dify-plugin-daemon)
 
   mkdir -p "${backup_dir}"
-  docker compose -f {{compose_base}} create
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} -f {{compose_base}} create
 
   for container in "${containers[@]}"; do
     mount_dir="${volume_dirs[$container]}"
@@ -74,7 +91,7 @@ backup backup_dir="../dify-backups":
       tar cvf "/backup/${tar_file}" "${mount_dir}"
   done
 
-  docker compose -f {{compose_base}} down
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} -f {{compose_base}} down
   sudo chown -R "$USER:$USER" "${backup_dir}"
   echo "Backup created successfully in the ${backup_dir} directory."
 
@@ -120,7 +137,7 @@ restore backup_dir="../dify-backups":
     fi
   done
 
-  docker compose -f {{compose_base}} create
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} -f {{compose_base}} create
 
   for container in "${containers[@]}"; do
     mount_dir="${volume_dirs[$container]}"
@@ -129,5 +146,5 @@ restore backup_dir="../dify-backups":
       "rm -rf ${mount_dir}/* && tar xvf /backup/${tar_file} -C /"
   done
 
-  docker compose -f {{compose_base}} down
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} -f {{compose_base}} down
   echo "Backup restoration completed successfully."
