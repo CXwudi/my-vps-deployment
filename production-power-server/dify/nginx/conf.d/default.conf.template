@@ -20,7 +20,8 @@ server {
     }
 
     location /socket.io/ {
-      proxy_pass $api_backend;
+      set $socket_io_upstream ${NGINX_SOCKET_IO_UPSTREAM};
+      proxy_pass http://$socket_io_upstream;
       include proxy.conf;
       proxy_set_header Upgrade $http_upgrade;
       proxy_set_header Connection "upgrade";
