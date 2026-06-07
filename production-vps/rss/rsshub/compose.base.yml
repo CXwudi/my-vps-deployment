@@ -5,8 +5,8 @@ services:
     # TTRSS subscriptions rely on this DNS name on rss-global-network.
     hostname: rsshub-app
     restart: unless-stopped
-    env_file:
-      - ${RSSHUB_KEY_ENV_FILE:-key.env}
+    # env_file:
+      # - ${RSSHUB_KEY_ENV_FILE:-key.env}
     ports:
       - "${RSSHUB_HOST_PORT:-3900}:${RSSHUB_INTERNAL_PORT:-1200}"
     environment:

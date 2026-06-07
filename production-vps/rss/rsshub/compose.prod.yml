@@ -2,6 +2,8 @@ services:
   rsshub:
     environment:
       PROXY_URI: ${RSSHUB_PROXY_URI:-socks5h://warp-proxy:1080}
+    env_file:
+      - ${RSSHUB_KEY_ENV_FILE:-key.env}
     networks:
       - rss-network
 
