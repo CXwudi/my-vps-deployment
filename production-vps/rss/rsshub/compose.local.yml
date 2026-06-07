@@ -1,10 +1,7 @@
-x-shared-env: &shared-env-local
-  LOGGER_LEVEL: ${RSSHUB_LOGGER_LEVEL:-debug}
-  DEBUG_INFO: ${RSSHUB_DEBUG_INFO:-true}
-
 services:
   rsshub:
     env_file:
       - ${RSSHUB_TEST_KEY_ENV_FILE:-test-key.env}
     environment:
-      <<: *shared-env-local
+      LOGGER_LEVEL: ${RSSHUB_LOGGER_LEVEL:-debug}
+      DEBUG_INFO: ${RSSHUB_DEBUG_INFO:-true}

@@ -1,10 +1,7 @@
-x-shared-env: &shared-env-prod
-  PROXY_URI: ${RSSHUB_PROXY_URI:-socks5h://warp-proxy:1080}
-
 services:
   rsshub:
     environment:
-      <<: *shared-env-prod
+      PROXY_URI: ${RSSHUB_PROXY_URI:-socks5h://warp-proxy:1080}
     networks:
       - rss-network
 
