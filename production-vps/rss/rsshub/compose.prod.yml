@@ -1,7 +1,10 @@
+# x-shared-prod-env: &shared-prod-env
+#   PROXY_URI: ${RSSHUB_PROXY_URI:-socks5h://warp-proxy:1080}
+
 services:
   rsshub:
     # environment: # it is currently causing issues with twitter
-    #   PROXY_URI: ${RSSHUB_PROXY_URI:-socks5h://warp-proxy:1080}
+    #   <<: *shared-prod-env
     env_file:
       - ${RSSHUB_KEY_ENV_FILE:-key.env}
     networks:

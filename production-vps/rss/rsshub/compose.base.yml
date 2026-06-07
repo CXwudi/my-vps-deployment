@@ -1,3 +1,12 @@
+x-shared-env: &shared-env
+  NODE_ENV: ${RSSHUB_NODE_ENV:-production}
+  PORT: ${RSSHUB_INTERNAL_PORT:-1200}
+  TZ: ${RSSHUB_TIMEZONE:-America/New_York}
+  CACHE_TYPE: ${RSSHUB_CACHE_TYPE:-redis}
+  REDIS_URL: ${RSSHUB_REDIS_URL:-redis://rsshub-redis:6379/}
+  PIXIV_BYPASS_CDN: ${PIXIV_BYPASS_CDN:-0}
+  ALLOW_USER_HOTLINK_TEMPLATE: ${ALLOW_USER_HOTLINK_TEMPLATE:-true}
+
 services:
   rsshub:
     image: diygod/rsshub:chromium-bundled
@@ -5,18 +14,11 @@ services:
     # TTRSS subscriptions rely on this DNS name on rss-global-network.
     hostname: rsshub-app
     restart: unless-stopped
-    # env_file:
-      # - ${RSSHUB_KEY_ENV_FILE:-key.env}
+    # env file is configured per environment
     ports:
       - "${RSSHUB_HOST_PORT:-3900}:${RSSHUB_INTERNAL_PORT:-1200}"
     environment:
-      NODE_ENV: ${RSSHUB_NODE_ENV:-production}
-      PORT: ${RSSHUB_INTERNAL_PORT:-1200}
-      TZ: ${RSSHUB_TIMEZONE:-America/New_York}
-      CACHE_TYPE: ${RSSHUB_CACHE_TYPE:-redis}
-      REDIS_URL: ${RSSHUB_REDIS_URL:-redis://rsshub-redis:6379/}
-      PIXIV_BYPASS_CDN: ${PIXIV_BYPASS_CDN:-0}
-      ALLOW_USER_HOTLINK_TEMPLATE: ${ALLOW_USER_HOTLINK_TEMPLATE:-true}
+      <<: *shared-env
     networks:
       - default
     depends_on:
