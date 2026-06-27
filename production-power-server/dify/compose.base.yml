@@ -349,7 +349,7 @@ services:
 
   # The DifySandbox
   sandbox:
-    image: langgenius/dify-sandbox:latest
+    image: langgenius/dify-sandbox:${SANDBOX_VERSION:?SANDBOX_VERSION must be set in .env}
     container_name: dify-sandbox
     restart: unless-stopped
     env_file:

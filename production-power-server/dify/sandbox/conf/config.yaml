@@ -5,7 +5,11 @@ app:
 max_workers: 4
 max_requests: 50
 worker_timeout: 5
-python_path: /usr/local/bin/python3
+# NOTE: python_path/nodejs_path must match the sandbox image (SANDBOX_VERSION in .env).
+# Dify 1.14.x / dify-sandbox 0.2.15: python lives at /opt/python/bin/python3 (older images used /usr/local/bin/python3).
+# REMEMBER: re-verify these two paths whenever you bump SANDBOX_VERSION.
+python_path: /opt/python/bin/python3
+nodejs_path: /usr/local/bin/node
 enable_network: True # please make sure there is no network risk in your environment
 allowed_syscalls: # please leave it empty if you have no idea how seccomp works
 proxy:
