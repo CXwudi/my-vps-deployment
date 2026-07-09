@@ -3,7 +3,7 @@ services:
     image: goacme/lego:latest
     container_name: lego
     env_file:
-      - ${LEGO_ENV_FILE:-.env.example}
+      - .env
     environment:
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN:?CLOUDFLARE_DNS_API_TOKEN must be set in .env}
     volumes:
