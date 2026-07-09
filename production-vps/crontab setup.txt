@@ -11,4 +11,4 @@ PATH=/usr/local/bin:/usr/bin:/bin
 0 */6 * * * cd /home/cxwudi/LLMs/lobe-chat && just update env=prod >> update_log.txt 2>&1
 
 # Lego certificate renewal on the 1st and 15th of each month. Writes an ignored renewal.log beside the service.
-0 3 1,15 * * cd /home/cxwudi/lego && just refresh-existing >> renewal.log 2>&1
+0 3 1,15 * * cd /home/cxwudi/lego && just refresh-existing >> renewal.log 2>&1 && cd /home/cxwudi/nginx && just reload && cd /home/cxwudi/certification/ && ./copy-cert.sh >> copy.log 2>&1

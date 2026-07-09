@@ -2,20 +2,21 @@
 
 set dotenv-load := true
 
-compose_file := "compose.yml"
-
 _default:
   @just --justfile {{justfile()}} --list
 
 # Render Compose config without running ACME operations.
 config:
-  docker compose --env-file .env.example -f {{compose_file}} config
+  docker compose config
 
 # Create a new certificate using the configured DNS provider and domains.
 create-new:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  CURRENT_UID=$(id -u)
+  CURRENT_GID=$(id -g)
+
   server_arg=()
   if [[ -n "${LEGO_SERVER:-}" ]]; then
     server_arg=(--server "${LEGO_SERVER}")
@@ -29,20 +30,23 @@ create-new:
     domain_args+=(--domains "${domain}")
   done
 
-  docker compose -f {{compose_file}} run --rm lego \
+  docker compose run --rm --user "${CURRENT_UID}:${CURRENT_GID}" lego \
+    run \
     "${server_arg[@]}" \
     --accept-tos \
     --email "${LEGO_EMAIL:?LEGO_EMAIL must be set}" \
     --dns "${LEGO_DNS_PROVIDER:-cloudflare}" \
     "${domain_args[@]}" \
-    --dns.resolvers "${LEGO_DNS_RESOLVERS:-1.1.1.1:53}" \
-    run
+    --dns.resolvers "${LEGO_DNS_RESOLVERS:-1.1.1.1:53}"
 
 # Renew existing certificates without deleting ACME account data.
 refresh-existing:
   #!/usr/bin/env bash
   set -euo pipefail
 
+  CURRENT_UID=$(id -u)
+  CURRENT_GID=$(id -g)
+
   server_arg=()
   if [[ -n "${LEGO_SERVER:-}" ]]; then
     server_arg=(--server "${LEGO_SERVER}")
@@ -56,18 +60,20 @@ refresh-existing:
     domain_args+=(--domains "${domain}")
   done
 
-  docker compose -f {{compose_file}} run --rm lego \
+  docker compose run --rm --user "${CURRENT_UID}:${CURRENT_GID}" lego \
+    run \
+    --renew-days "${LEGO_RENEW_DAYS:-30}" \
+    --no-random-sleep \
     "${server_arg[@]}" \
     --accept-tos \
     --email "${LEGO_EMAIL:?LEGO_EMAIL must be set}" \
     --dns "${LEGO_DNS_PROVIDER:-cloudflare}" \
     "${domain_args[@]}" \
-    --dns.resolvers "${LEGO_DNS_RESOLVERS:-1.1.1.1:53}" \
-    renew --days "${LEGO_RENEW_DAYS:-30}" --no-random-sleep
+    --dns.resolvers "${LEGO_DNS_RESOLVERS:-1.1.1.1:53}"
 
 # Remove stopped lego containers and network artifacts, but keep lego-data intact.
 cleanup:
-  docker compose -f {{compose_file}} down --remove-orphans
+  docker compose down --remove-orphans
 
 # Backward-compatible aliases.
 run: create-new
