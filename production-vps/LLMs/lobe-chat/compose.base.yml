@@ -29,6 +29,13 @@ services:
       AUTH_CLOUDFLARE_ZERO_TRUST_ID: ${AUTH_CLOUDFLARE_ZERO_TRUST_ID:-}
       AUTH_CLOUDFLARE_ZERO_TRUST_SECRET: ${AUTH_CLOUDFLARE_ZERO_TRUST_SECRET:-}
       AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER: ${AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER:-}
+      # Gateway: browsers use the public URL from the local/prod override.
+      ENABLE_AGENT_GATEWAY: ${ENABLE_AGENT_GATEWAY:-1}
+      AGENT_GATEWAY_INTERNAL_URL: ${AGENT_GATEWAY_INTERNAL_URL:-http://lobechat-gateway:8787}
+      AGENT_GATEWAY_SERVICE_TOKEN: ${GATEWAY_SERVICE_TOKEN:?GATEWAY_SERVICE_TOKEN must be set in .env}
+      DEVICE_GATEWAY_URL: ${DEVICE_GATEWAY_URL:-http://lobechat-gateway:8788}
+      DEVICE_GATEWAY_SERVICE_TOKEN: ${GATEWAY_SERVICE_TOKEN:?GATEWAY_SERVICE_TOKEN must be set in .env}
+      JWKS_PUBLIC_KEY: ${JWKS_PUBLIC_KEY:?JWKS_PUBLIC_KEY must be set in .env}
       # Database
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env}
       DATABASE_DRIVER: ${DATABASE_DRIVER:-node}
@@ -61,12 +68,32 @@ services:
     networks:
       - default
     depends_on:
+      gateway:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
       search:
         condition: service_healthy
+
+  gateway:
+    image: ghcr.io/lobehub/lobehub-gateway:latest
+    container_name: lobechat-gateway
+    restart: unless-stopped
+    environment:
+      SERVICE_TOKEN: ${GATEWAY_SERVICE_TOKEN:?GATEWAY_SERVICE_TOKEN must be set in .env}
+      # Only the public key goes to the gateway; JWKS_KEY stays in the app.
+      JWKS_PUBLIC_KEY: ${JWKS_PUBLIC_KEY:?JWKS_PUBLIC_KEY must be set in .env}
+      LOBE_API_BASE_URL: ${GATEWAY_LOBE_API_BASE_URL:-http://lobechat-app:3210}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8787/health > /dev/null && wget -qO- http://127.0.0.1:8788/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - default
 
   db:
     image: paradedb/paradedb:latest-pg17

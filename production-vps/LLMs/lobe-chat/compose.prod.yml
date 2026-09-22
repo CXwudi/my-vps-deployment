@@ -2,6 +2,11 @@ services:
   app:
     environment:
       APP_URL: ${APP_URL:-https://lobechat.mikufancx.cyou}
+      AGENT_GATEWAY_URL: ${AGENT_GATEWAY_URL:-${APP_URL:-https://lobechat.mikufancx.cyou}/agent-gateway}
+    networks:
+      - nginx
+
+  gateway:
     networks:
       - nginx
 

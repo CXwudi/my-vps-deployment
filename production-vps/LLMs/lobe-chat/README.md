@@ -1,7 +1,7 @@
 # LobeChat Deployment
 
-This service runs LobeChat with PostgreSQL/ParadeDB, Redis, and a private
-SearXNG instance on the lightweight VPS.
+This service runs LobeChat with PostgreSQL/ParadeDB, Redis, a private
+SearXNG instance, and the unified LobeHub agent/device gateway on the lightweight VPS.
 
 ## Prerequisites
 
@@ -56,9 +56,6 @@ provider keys, auth secrets, database passwords, or S3 credentials.
   - `lobechat-redis` for Redis append-only data.
   - `lobechat-searxng-data` for SearXNG settings.
 
-The older `llm-http-global-network` helper in `../justfile` is not required by
-this LobeChat stack. It is kept for compatibility with older/disabled LLM
-services.
 
 ## Operations
 
