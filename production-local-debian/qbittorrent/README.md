@@ -2,8 +2,8 @@
 
 Torrent download stack for the local Debian server.
 
-- **qBittorrent Web UI**: http://localhost:3902
-- **PeerBanHelper Web UI**: http://localhost:3903
+- **qBittorrent Web UI**: <http://local.ip:3902> (`http://localhost:3902` on the server)
+- **PeerBanHelper Web UI**: <http://local.ip:3903> (`http://localhost:3903` on the server)
 - **Add-Trackers helper**: internal only (port 8080 by default)
 
 ## Setup
@@ -16,7 +16,7 @@ Torrent download stack for the local Debian server.
 ## Recipes
 
 | Command | Description |
-|---|---|
+| --- | --- |
 | `just boot env=prod` | Start all three services |
 | `just down env=prod` | Stop all services |
 | `just reboot env=prod` | Restart all services |
@@ -28,7 +28,7 @@ Torrent download stack for the local Debian server.
 ## Volumes
 
 | Volume | Purpose |
-|---|---|
+| --- | --- |
 | `qbittorrent-config` | qBittorrent app config |
 | `peerbanhelper-data` | PeerBanHelper state |
 | `../torrent-download` (bind mount) | Downloaded torrents at `/downloads` |
@@ -36,7 +36,7 @@ Torrent download stack for the local Debian server.
 ## Ports
 
 | Port | Service |
-|---|---|
+| --- | --- |
 | 3902 | qBittorrent Web UI |
 | 39001 | BitTorrent traffic (TCP+UDP) |
 | 3903 | PeerBanHelper Web UI |
@@ -47,18 +47,32 @@ Services connect via `qbittorrent-defnet` and attach to `global-net` in
 production. The add-trackers helper connects to qBittorrent internally at
 `http://qbittorrent-app:<WEBUI_PORT>`.
 
+## Port Forwarding
+
+Router such as OpenWrt forward WAN TCP and UDP port `39001` to the this local server at `local.ip:39001`. Keep the existing qBittorrent redirect in `/etc/config/firewall` equivalent to:
+
+```text
+config redirect
+  option name 'Qbittorrent'
+  option src 'wan'
+  option dest 'lan'
+  option proto 'tcp udp'
+  option src_dport '39001'
+  option dest_ip 'local.ip'
+  option dest_port '39001'
+  option target 'DNAT'
+```
+
+This router rule is separate from Compose's `${TORRENTING_PORT}` TCP/UDP port mappings, which publish on all host addresses. If `TORRENTING_PORT` changes, update the router's external and destination ports to match.
+
 ## Memory Leak Workaround
 
-qBittorrent with libtorrent 2.0.x may leak memory over time. A scheduled
-`just reboot-qb` (via `crontab.txt`) stops, removes, and recreates only the
-`qbittorrent-app` container without touching data volumes. See
-[libtorrent#6667](https://github.com/arvidn/libtorrent/issues/6667).
+qBittorrent with libtorrent 2.0.x may leak memory over time. A scheduled `just reboot-qb` (via `crontab.txt`) stops, removes, and recreates only the `qbittorrent-app` container without touching data volumes.
+See [libtorrent#6667](https://github.com/arvidn/libtorrent/issues/6667).
 
 ## Backup / Restore
 
-Backups are stored in `./backup/` (gitignored). The backup recipe creates
-temporary containers, archives volumes, and cleans up. Restore reverses the
-process.
+Backups are stored in `./backup/` (gitignored). The backup recipe creates temporary containers, archives volumes, and cleans up. Restore reverses the process.
 
 ## Cron
 

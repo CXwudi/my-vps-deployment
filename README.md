@@ -24,6 +24,7 @@ power server, lightweight VPS, and local Debian server.
 - **Never** commit `.env` files containing real credentials.
 - **Never** commit certificates, private keys, or ACME account data.
 - **Never** commit backup archives, logs, or runtime state.
+- **Never** exposes local sensitive information such as IP address, etc into non gitignored files.
 - Use `.env.example` files for documenting required environment variables.
 - `spec/` and `plan/` directories are temporary planning artifacts — they are
   ignored by Git.

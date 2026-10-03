@@ -12,7 +12,7 @@ Local-network Docker server providing DNS (AdGuard Home), reverse proxy
 ## Host Layout
 
 | Directory | Service | Role |
-|---|---|---|
+| --- | --- | --- |
 | `adguardhome/` | AdGuard Home | Local DNS + ad blocking |
 | `cloudflare-tunnel/` | Cloudflare Tunnel | Public access without port forwarding |
 | `infra/watchtower/` | Watchtower | Auto-update Docker containers |
