@@ -82,6 +82,9 @@ backup backup_dir="../dify-backups":
   containers=(dify-qdrant dify-redis dify-db dify-api dify-plugin-daemon)
 
   mkdir -p "${backup_dir}"
+  # Stop the entire stack before copying database and application data.
+  docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} -f {{compose_base}} -f {{compose_prod}} stop --timeout 120
+  # Do the create in case if the stack is not running
   docker compose --env-file {{compose_default_env}} --env-file {{compose_override_env}} -f {{compose_base}} create
 
   for container in "${containers[@]}"; do

@@ -63,6 +63,9 @@ backup backup_dir="../n8n-backups":
   containers=(n8n-main n8n-postgres n8n-redis n8n-workflow-postgres n8n-workflow-redis)
 
   mkdir -p "${backup_dir}"
+  # Stop the entire stack before copying database and application data.
+  docker compose -f {{compose_base}} -f {{compose_prod}} stop --timeout 120
+  # Do the create in case if the stack is not running
   docker compose -f {{compose_base}} create
 
   for container in "${containers[@]}"; do
